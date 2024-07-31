@@ -21,7 +21,9 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-
+/// Constant values used within the runtime.
+pub mod constants;
+use constants::{currency::*, time::*};
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -32,6 +34,7 @@ pub use sp_runtime::BuildStorage;
 pub mod migrations;
 pub mod weights;
 
+use pallet_nfts::PalletFeatures;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use {
     cumulus_primitives_core::AggregateMessageOrigin,
@@ -214,7 +217,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("container-chain-template"),
     impl_name: create_runtime_str!("container-chain-template"),
     authoring_version: 1,
-    spec_version: 700,
+    spec_version: 702,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -638,6 +641,48 @@ impl pallet_multisig::Config for Runtime {
     type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub Features: PalletFeatures = PalletFeatures::all_enabled();
+	pub const MaxAttributesPerCall: u32 = 10;
+    pub const MaxDeadlineDuration: BlockNumber = 12 * 30 * DAYS;
+    pub const MaxTips: u32 = 10;
+    pub const ItemAttributesApprovalsLimit: u32 = 20;
+    pub const CollectionDeposit: Balance = 100 * DOLLARS;
+	pub const ItemDeposit: Balance = 1 * DOLLARS;
+	pub const ApprovalsLimit: u32 = 20;
+    pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
+}
+
+impl pallet_nfts::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type CollectionId = u32;
+	type ItemId = u32;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type CollectionDeposit = CollectionDeposit;
+	type ItemDeposit = ItemDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type AttributeDepositBase = MetadataDepositBase;
+	type DepositPerByte = MetadataDepositPerByte;
+	type StringLimit = ConstU32<256>;
+	type KeyLimit = ConstU32<64>;
+	type ValueLimit = ConstU32<256>;
+	type ApprovalsLimit = ApprovalsLimit;
+	type ItemAttributesApprovalsLimit = ItemAttributesApprovalsLimit;
+	type MaxTips = MaxTips;
+	type MaxDeadlineDuration = MaxDeadlineDuration;
+	type MaxAttributesPerCall = MaxAttributesPerCall;
+	type Features = Features;
+	type OffchainSignature = Signature;
+	type OffchainPublic = <Signature as Verify>::Signer;
+	type WeightInfo = pallet_nfts::weights::SubstrateWeight<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type Locker = ();
+}
+
 impl_tanssi_pallets_config!(Runtime);
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -681,6 +726,8 @@ construct_runtime!(
         RootTesting: pallet_root_testing = 100,
         AsyncBacking: pallet_async_backing::{Pallet, Storage} = 110,
 
+        Nfts: pallet_nfts = 111,
+
     }
 );
 
@@ -707,6 +754,7 @@ mod benches {
         [pallet_foreign_asset_creator, ForeignAssetsCreator]
         [pallet_asset_rate, AssetRate]
         [pallet_xcm_executor_utils, XcmExecutorUtils]
+        [pallet_nfts, Nfts]
     );
 }
 

@@ -174,10 +174,12 @@ pub type XcmRouter = (
     XcmpQueue,
 );
 
+
 pub struct XcmConfig;
 impl staging_xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
+    type XcmRecorder = ();
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = IsReserveFilter<Runtime>;

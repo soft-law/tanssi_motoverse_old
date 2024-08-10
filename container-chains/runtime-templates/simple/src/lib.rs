@@ -34,6 +34,9 @@ pub use sp_runtime::BuildStorage;
 pub mod migrations;
 pub mod weights;
 
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::EnsureSigned;
+
 use pallet_nfts::PalletFeatures;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use {
